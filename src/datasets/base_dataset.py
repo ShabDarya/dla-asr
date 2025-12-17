@@ -84,6 +84,12 @@ class BaseDataset(Dataset):
         text = data_dict["text"]
         text_encoded = self.text_encoder.encode(text)
 
+        if (
+            self.instance_transforms is not None
+            and "audio" in self.instance_transforms.keys()
+        ):
+            audio = self.instance_transforms["audio"](audio)
+
         spectrogram = self.get_spectrogram(audio)
 
         instance_data = {
@@ -178,7 +184,7 @@ class BaseDataset(Dataset):
             )
             _total = exceeds_audio_length.sum()
             logger.info(
-                f"{_total} ({_total / initial_size:.1%}) records are longer then "
+                f"{_total} ({_total / initial_size: .1%}) records are longer then "
                 f"{max_audio_length} seconds. Excluding them."
             )
         else:
@@ -194,7 +200,7 @@ class BaseDataset(Dataset):
             )
             _total = exceeds_text_length.sum()
             logger.info(
-                f"{_total} ({_total / initial_size:.1%}) records are longer then "
+                f"{_total} ({_total / initial_size: .1%}) records are longer then "
                 f"{max_text_length} characters. Excluding them."
             )
         else:
@@ -206,7 +212,7 @@ class BaseDataset(Dataset):
             _total = records_to_filter.sum()
             index = [el for el, exclude in zip(index, records_to_filter) if not exclude]
             logger.info(
-                f"Filtered {_total} ({_total / initial_size:.1%}) records  from dataset"
+                f"Filtered {_total} ({_total / initial_size: .1%}) records from dataset"
             )
 
         return index

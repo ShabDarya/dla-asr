@@ -14,3 +14,7 @@ hydra-core
 black
 isort
 pre-commit
+datasets
+wget
+
+--extra-index-url https://download.pytorch.org/whl/cu118

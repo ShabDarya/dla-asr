@@ -24,6 +24,8 @@ class BaselineModel(nn.Module):
             nn.ReLU(),
             nn.Linear(in_features=fc_hidden, out_features=n_tokens),
         )
+        #
+        self.n_tokens = n_tokens
 
     def forward(self, spectrogram, spectrogram_length, **batch):
         """
