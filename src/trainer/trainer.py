@@ -79,10 +79,12 @@ class Trainer(BaseTrainer):
         # logging scheme might be different for different partitions
         if mode == "train":  # the method is called only every self.log_step steps
             self.log_spectrogram(**batch)
+            self.log_audio(**batch)
         else:
             # Log Stuff
             self.log_spectrogram(**batch)
             self.log_predictions(**batch)
+            self.log_audio(**batch)
 
     def log_spectrogram(self, spectrogram, **batch):
         spectrogram_for_plot = spectrogram[0].detach().cpu()
@@ -121,3 +123,8 @@ class Trainer(BaseTrainer):
         self.writer.add_table(
             "predictions", pd.DataFrame.from_dict(rows, orient="index")
         )
+
+    def log_audio(self, audio_path, audio, **batch):
+        filename = Path(audio_path[0]).name
+        audio_for_save = audio[0].detach().cpu()
+        self.writer.add_audio(filename, audio_for_save, 16000)

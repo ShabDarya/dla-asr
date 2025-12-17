@@ -1,0 +1,5 @@
+val:
+  _target_: src.datasets.LibrispeechDataset
+  part: "dev-clean"
+  data_dir: C:/Users/DARYA/Desktop/Stud/DLA/HW2/dla-asr/data/datasets/librispeech
+  instance_transforms: ${transforms.instance_transforms.inference}
