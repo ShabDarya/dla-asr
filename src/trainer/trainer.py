@@ -80,11 +80,13 @@ class Trainer(BaseTrainer):
         if mode == "train":  # the method is called only every self.log_step steps
             self.log_spectrogram(**batch)
             self.log_audio(**batch)
-        else:
+        elif mode != "train" and batch_idx == 0:
             # Log Stuff
             self.log_spectrogram(**batch)
             self.log_predictions(**batch)
             self.log_audio(**batch)
+        else:
+            pass
 
     def log_spectrogram(self, spectrogram, **batch):
         spectrogram_for_plot = spectrogram[0].detach().cpu()
@@ -101,7 +103,7 @@ class Trainer(BaseTrainer):
         argmax_inds = log_probs.cpu().argmax(-1).numpy()
         argmax_inds = [
             inds[: int(ind_len)]
-            for inds, ind_len in zip(argmax_inds, log_probs_length.numpy())
+            for inds, ind_len in zip(argmax_inds, log_probs_length.cpu().numpy())
         ]
         argmax_texts_raw = [self.text_encoder.decode(inds) for inds in argmax_inds]
         argmax_texts = [self.text_encoder.ctc_decode(inds) for inds in argmax_inds]
@@ -120,6 +122,7 @@ class Trainer(BaseTrainer):
                 "wer": wer,
                 "cer": cer,
             }
+
         self.writer.add_table(
             "predictions", pd.DataFrame.from_dict(rows, orient="index")
         )

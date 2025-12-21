@@ -25,7 +25,7 @@ def collate_fn(dataset_items: list[dict]):
     specs_T = [s.transpose(0, 1) for s in specs]
     spec_lens = torch.tensor([s.shape[0] for s in specs_T])
     specs_padded = pad_sequence(specs_T, batch_first=True)
-    batch["spectrogram"] = specs_padded.transpose(1, 2)
+    batch["spectrogram"] = specs_padded
     batch["spectrogram_length"] = spec_lens
 
     batch["text"] = [x["text"] for x in dataset_items]
@@ -34,6 +34,6 @@ def collate_fn(dataset_items: list[dict]):
     batch["text_encoded"] = pad_sequence(texts_encoded, batch_first=True)
     batch["text_encoded_length"] = text_lens
 
-    batch["audio_path"] = torch.tensor([x["audio_path"] for x in dataset_items])
+    batch["audio_path"] = [x["audio_path"] for x in dataset_items]
 
     return batch

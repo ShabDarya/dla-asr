@@ -151,6 +151,8 @@ class Inferencer(BaseTrainer):
                 "predictions": pred_text,
                 "raw prediction": raw_text,
             }
+            batch["predictions"] = pred_text
+            batch["raw prediction"] = raw_text
 
             if self.save_path is not None:
                 # you can use safetensors or other lib here

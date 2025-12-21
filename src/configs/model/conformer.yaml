@@ -1,0 +1,6 @@
+_target_: src.model.ConformerModel
+n_feats: 128
+dim: 128
+fc_hidden: 256
+num_heads: 4
+num_layers: 4
