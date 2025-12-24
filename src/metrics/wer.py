@@ -6,7 +6,7 @@ from torch import Tensor
 from src.metrics.base_metric import BaseMetric
 from src.metrics.utils import calc_wer
 
-# TODO beam search / LM versions
+# TODO LM versions
 # Note: they can be written in a pretty way
 # Note 2: overall metric design can be significantly improved
 
@@ -20,7 +20,11 @@ class ArgmaxWERMetric(BaseMetric):
         self, log_probs: Tensor, log_probs_length: Tensor, text: List[str], **kwargs
     ):
         wers = []
-        predictions = torch.argmax(log_probs.cpu(), dim=-1).numpy()
+        if self.text_encoder.use_beam:
+            predictions = log_probs.detach().cpu()  # .numpy()
+        else:
+            predictions = torch.argmax(log_probs.cpu(), dim=-1).numpy()
+
         lengths = log_probs_length.detach().cpu().numpy()
         for log_prob_vec, length, target_text in zip(predictions, lengths, text):
             target_text = self.text_encoder.normalize_text(target_text)

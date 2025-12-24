@@ -27,6 +27,7 @@ class CTCTextEncoder:
 
         self.ind2char = dict(enumerate(self.vocab))
         self.char2ind = {v: k for k, v in self.ind2char.items()}
+        self.use_beam = False
 
     def __len__(self):
         return len(self.vocab)
@@ -67,25 +68,31 @@ class CTCTextEncoder:
             text (str): text without empty tokens and repetitions.
         """
 
+        text = self.merge_inds(inds)
+
+        return self.decode(text)
+
+    @staticmethod
+    def merge_inds(inds: list) -> list:
         text = [inds[0]]
         current_char = inds[0]
-        povtor = False
+        is_repeat = False
         for i in range(1, len(inds)):
             if inds[i] != current_char:
-                if povtor:
-                    povtor = False
+                if is_repeat:
+                    is_repeat = False
                     current_char = inds[i]
                     text.append(current_char)
                 else:
                     current_char = inds[i]
                     text.append(current_char)
             else:
-                if not povtor:
-                    povtor = True
+                if not is_repeat:
+                    is_repeat = True
         if current_char != inds[-1]:
             text.append(inds[-1])
 
-        return self.decode(text)
+        return text
 
     @staticmethod
     def normalize_text(text: str):

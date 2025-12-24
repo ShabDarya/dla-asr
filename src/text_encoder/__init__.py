@@ -1,1 +1,2 @@
+from src.text_encoder.ctc_text_beam_encoder import CTCTextBeamEncoder
 from src.text_encoder.ctc_text_encoder import CTCTextEncoder
