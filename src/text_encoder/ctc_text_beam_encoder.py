@@ -1,3 +1,4 @@
+import math
 from collections import defaultdict
 
 import torch
@@ -12,14 +13,10 @@ class CTCTextBeamEncoder(CTCTextEncoder):
         self.n_beam = n_beam
         self.emp_id = self.char2ind[self.EMPTY_TOK]
         self.use_beam = True
-        print(n_beam)
 
-    def ctc_decode(self, inds):
+    def ctc_beam_decode(self, inds):
         preds = defaultdict(list)
-        preds[(self.emp_id,)] = (
-            torch.tensor(1.0),
-            torch.tensor(0.0),
-        )  # (blank, non_blank)
+        preds[(self.emp_id,)] = (1.0, 0.0)  # (blank, non_blank)
 
         for t in inds:
             new_pref = defaultdict(list)
@@ -41,20 +38,27 @@ class CTCTextBeamEncoder(CTCTextEncoder):
 
         return {x: pref[x] for x in top_k_prefixes}
 
+    def logsumexp(self, vals):
+        return math.log(sum(math.exp(v) for v in vals))
+
+    def logaddexp(self, a, b):
+        return math.log(math.exp(a) + math.exp(b))
+
     def sum_probs(self, pref):
-        total_prob = defaultdict(torch.tensor)
+        total_prob = defaultdict(list)
         for k in pref.keys():
             firsts, seconds = pref[k] if isinstance(pref[k], tuple) else zip(*pref[k])
 
             if isinstance(pref[k], tuple):
                 sum_blank = firsts
                 sum_non_blank = seconds
+
             else:
-                sum_blank = torch.logsumexp(torch.stack(firsts), dim=0)
-                sum_non_blank = torch.logsumexp(torch.stack(seconds), dim=0)
+                sum_blank = self.logsumexp(firsts)
+                sum_non_blank = self.logsumexp(seconds)
 
             pref[k] = (sum_blank, sum_non_blank)
-            total_prob[k] = torch.logaddexp(sum_blank, sum_non_blank)
+            total_prob[k] = self.logaddexp(sum_blank, sum_non_blank)
 
         return total_prob
 
@@ -82,8 +86,8 @@ class CTCTextBeamEncoder(CTCTextEncoder):
         else:
             pb0, pnb0 = new_pref[old_p]
             new_pref[old_p] = (
-                torch.logaddexp(pb0, prob[0]),
-                torch.logaddexp(pnb0, prob[1]),
+                self.logaddexp(pb0, prob[0]),
+                self.logaddexp(pnb0, prob[1]),
             )
 
         return new_pref
