@@ -1,6 +1,7 @@
 from pathlib import Path
 
 import pandas as pd
+import torch
 
 from src.logger.utils import plot_spectrogram
 from src.metrics.tracker import MetricTracker
@@ -33,7 +34,22 @@ class Trainer(BaseTrainer):
                 model outputs, and losses.
         """
         batch = self.move_batch_to_device(batch)
+
+        if not self._audio_log:
+            au_before = batch["audio"].detach().clone()
+            sp_before = batch["spectrogram"].detach().clone()
+
         batch = self.transform_batch(batch)  # transform batch on device -- faster
+
+        if not self._audio_log:
+            if not torch.allclose(au_before, batch["audio"]):
+                self.log_audio(
+                    audio_path=batch["audio_path"], audio=au_before, mode="before"
+                )
+                self.log_spectrogram(spectrogram=sp_before, mode="before")
+                self.log_audio(**batch, mode="after")
+                self.log_spectrogram(**batch, mode="after")
+                self._audio_log = True
 
         metric_funcs = self.metrics["inference"]
         if self.is_train:
@@ -77,29 +93,25 @@ class Trainer(BaseTrainer):
         # such as audio, text or images, for example
 
         # logging scheme might be different for different partitions
-        if mode == "train":  # the method is called only every self.log_step steps
-            self.log_spectrogram(**batch)
-            self.log_audio(**batch)
-        elif mode != "train" and batch_idx == 0:
+        # if mode == "train":  # the method is called only every self.log_step steps
+        #    self.log_spectrogram(**batch)
+        #    self.log_audio(**batch)
+        if mode != "train" and batch_idx == 0:  # elif
             # Log Stuff
-            self.log_spectrogram(**batch)
+            self.log_spectrogram(**batch, mode="eval")
             self.log_predictions(**batch)
-            self.log_audio(**batch)
+            self.log_audio(**batch, mode="eval")
         else:
             pass
 
-    def log_spectrogram(self, spectrogram, **batch):
+    def log_spectrogram(self, mode, spectrogram, **batch):
         spectrogram_for_plot = spectrogram[0].detach().cpu()
         image = plot_spectrogram(spectrogram_for_plot)
-        self.writer.add_image("spectrogram", image)
+        self.writer.add_image(mode + " " + "spectrogram", image)
 
     def log_predictions(
         self, text, log_probs, log_probs_length, audio_path, examples_to_log=10, **batch
     ):
-        # TODO add beam search
-        # Note: by improving text encoder and metrics design
-        # this logging can also be improved significantly
-
         argmax_inds = log_probs.cpu().argmax(-1).numpy()
         argmax_inds = [
             inds[: int(ind_len)]
@@ -127,7 +139,7 @@ class Trainer(BaseTrainer):
             "predictions", pd.DataFrame.from_dict(rows, orient="index")
         )
 
-    def log_audio(self, audio_path, audio, **batch):
-        filename = Path(audio_path[0]).name
+    def log_audio(self, mode, audio_path, audio, **batch):
+        filename = mode + " " + Path(audio_path[0]).name
         audio_for_save = audio[0].detach().cpu()
         self.writer.add_audio(filename, audio_for_save, 16000)

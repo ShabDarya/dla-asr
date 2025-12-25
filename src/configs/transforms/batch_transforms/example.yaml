@@ -5,6 +5,26 @@ train:
       - _target_: src.transforms.Normalize1D
         mean: 0.5
         std: 0.5
+      - _target_: src.transforms.wav_augs.gaus_noise.Gaus
+        scale: 0.005
+        p: 0.5
+      - _target_: src.transforms.wav_augs.pitch.Pitch
+        min_transpose_semitones: -2
+        max_transpose_semitones: 2
+        sample_rate: 16000
+      - _target_: src.transforms.wav_augs.volume.Volume
+        gain: 0.6
+      - _target_: src.transforms.wav_augs.gain.Gain
+        min_gain_in_db: -3.0
+        max_gain_in_db: 3.0
+  get_spectrogram: # special key for getting spectrogram
+    _target_: torchaudio.transforms.MelSpectrogram
+    sample_rate: 16000
+    n_fft: 400
+    hop_length: 160
+    win_length: 400
+    n_mels: 128
+
 inference:
   audio: # name of the tensor on which we apply transform
     _target_: torch.nn.Sequential # to apply several transforms sequentially
@@ -12,3 +32,10 @@ inference:
       - _target_: src.transforms.Normalize1D
         mean: 0.5
         std: 0.5
+  get_spectrogram: # special key for getting spectrogram
+    _target_: torchaudio.transforms.MelSpectrogram
+    sample_rate: 16000
+    n_fft: 400
+    hop_length: 160
+    win_length: 400
+    n_mels: 128

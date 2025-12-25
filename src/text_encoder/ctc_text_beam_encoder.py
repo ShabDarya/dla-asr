@@ -41,9 +41,15 @@ class CTCTextBeamEncoder(CTCTextEncoder):
         return {x: pref[x] for x in top_k_prefixes}
 
     def logsumexp(self, vals):
-        return math.log(sum(math.exp(v) for v in vals))
+        m = max(vals)
+        if m == -float("inf"):
+            return -float("inf")
+        return m + math.log(sum(math.exp(v - m) for v in vals))
 
     def logaddexp(self, a, b):
+        m = max([a, b])
+        if m == -float("inf"):
+            return -float("inf")
         return math.log(math.exp(a) + math.exp(b))
 
     def merge_prefix(self, old_p, probs, new_p, new_prob, new_pref):

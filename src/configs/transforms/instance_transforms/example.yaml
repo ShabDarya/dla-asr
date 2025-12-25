@@ -6,10 +6,7 @@ train:
     hop_length: 160
     win_length: 400
     n_mels: 128
-  audio: # name of the tensor on which we apply transform
-    _target_: torchvision.transforms.v2.Compose
-    transforms:
-      - _target_: src.transforms.wav_augs.Gain
+
 inference:
   get_spectrogram:
     _target_: torchaudio.transforms.MelSpectrogram
