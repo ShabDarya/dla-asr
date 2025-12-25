@@ -16,7 +16,7 @@ class CTCTextBeamEncoder(CTCTextEncoder):
 
     def ctc_beam_decode(self, inds):
         preds = defaultdict(list)
-        preds[(self.emp_id,)] = (1.0, 0.0)  # (blank, non_blank)
+        preds[(self.emp_id,)] = (0.0, -float("inf"))  # (blank, non_blank)
 
         for t in inds:
             new_pref = defaultdict(list)
@@ -33,7 +33,9 @@ class CTCTextBeamEncoder(CTCTextEncoder):
         return self.decode(list(inds.keys())[0])
 
     def filter_key(self, pref, n):
-        sorted_prefixes = sorted(pref.keys(), key=lambda x: pref[x], reverse=True)
+        sorted_prefixes = sorted(
+            pref.keys(), key=lambda x: self.logsumexp(pref[x]), reverse=True
+        )
         top_k_prefixes = sorted_prefixes[:n]
 
         return {x: pref[x] for x in top_k_prefixes}
@@ -44,38 +46,17 @@ class CTCTextBeamEncoder(CTCTextEncoder):
     def logaddexp(self, a, b):
         return math.log(math.exp(a) + math.exp(b))
 
-    def sum_probs(self, pref):
-        total_prob = defaultdict(list)
-        for k in pref.keys():
-            firsts, seconds = pref[k] if isinstance(pref[k], tuple) else zip(*pref[k])
-
-            if isinstance(pref[k], tuple):
-                sum_blank = firsts
-                sum_non_blank = seconds
-
-            else:
-                sum_blank = self.logsumexp(firsts)
-                sum_non_blank = self.logsumexp(seconds)
-
-            pref[k] = (sum_blank, sum_non_blank)
-            total_prob[k] = self.logaddexp(sum_blank, sum_non_blank)
-
-        return total_prob
-
     def merge_prefix(self, old_p, probs, new_p, new_prob, new_pref):
         last_c = old_p[-1]
 
-        if last_c == self.emp_id:
-            prob = (probs[0], probs[0] + new_prob)  # blanc * prob_t
-
-        elif last_c == new_p:
-            prob = (probs[0], probs[1] + new_prob)  # non_blanc * prob_t
+        if last_c == new_p:
+            prob = (-float("inf"), probs[1] + new_prob)  # non_blanc * prob_t
 
         elif new_p == self.emp_id:
-            prob = (probs[1] + new_prob, probs[1])
+            prob = (self.logsumexp(probs) + new_prob, -float("inf"))
 
         else:
-            prob = (probs[0], probs[1] + new_prob)
+            prob = (-float("inf"), self.logsumexp(probs) + new_prob)
 
         if last_c != new_p:
             old_p = old_p + (new_p,)
