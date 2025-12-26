@@ -67,6 +67,7 @@ class BaseTrainer:
 
         self.logger = logger
         self.log_step = config.trainer.get("log_step", 50)
+        self._audio_log = False
 
         self.model = model
         self.criterion = criterion
@@ -205,6 +206,8 @@ class BaseTrainer:
         self.train_metrics.reset()
         self.writer.set_step((epoch - 1) * self.epoch_len)
         self.writer.add_scalar("epoch", epoch)
+        self._audio_log = False
+
         for batch_idx, batch in enumerate(
             tqdm(self.train_dataloader, desc="train", total=self.epoch_len)
         ):
@@ -371,9 +374,15 @@ class BaseTrainer:
         transforms = self.batch_transforms.get(transform_type)
         if transforms is not None:
             for transform_name in transforms.keys():
-                batch[transform_name] = transforms[transform_name](
-                    batch[transform_name]
-                )
+                if transform_name == "get_spectrogram":
+                    batch["spectrogram"] = transforms[transform_name](
+                        batch["audio"]
+                    ).transpose(1, 2)
+                else:
+                    batch[transform_name] = transforms[transform_name](
+                        batch[transform_name]
+                    )
+
         return batch
 
     def _clip_grad_norm(self):

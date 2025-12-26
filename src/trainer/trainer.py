@@ -96,11 +96,11 @@ class Trainer(BaseTrainer):
         # if mode == "train":  # the method is called only every self.log_step steps
         #    self.log_spectrogram(**batch)
         #    self.log_audio(**batch)
-        if mode != "train" and batch_idx == 0:  # elif
+        if mode != "train":  # elif
             # Log Stuff
-            self.log_spectrogram(**batch, mode="eval")
+            self.log_spectrogram(**batch, mode=mode)
             self.log_predictions(**batch)
-            self.log_audio(**batch, mode="eval")
+            self.log_audio(**batch, mode=mode)
         else:
             pass
 
