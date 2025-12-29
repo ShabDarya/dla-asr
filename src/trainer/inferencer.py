@@ -132,12 +132,14 @@ class Inferencer(BaseTrainer):
                 metrics.update(met.name, met(**batch))
 
         batch_size = batch["log_probs"].shape[0]
-        current_id = batch_idx * batch_size
 
         logits = batch["log_probs"]
         logits_length = batch["log_probs_length"]
 
         argmax_inds = logits.argmax(-1)
+
+        pred = []
+        raw_pred = []
 
         for i in range(batch_size):
             inds = argmax_inds[i][: int(logits_length[i])]
@@ -145,18 +147,21 @@ class Inferencer(BaseTrainer):
             raw_text = self.text_encoder.decode(inds.tolist())
             pred_text = self.text_encoder.ctc_decode(inds.tolist())
 
-            output_id = current_id + i
-
-            output = {
-                "predictions": pred_text,
-                "raw prediction": raw_text,
-            }
-            batch["predictions"] = pred_text
-            batch["raw prediction"] = raw_text
+            pred.append(pred_text)
+            raw_pred.append(raw_text)
 
             if self.save_path is not None:
                 # you can use safetensors or other lib here
-                torch.save(output, self.save_path / part / f"output_{output_id}.pth")
+                out_path = (
+                    self.save_path
+                    / part
+                    / f"{batch['audio_path'][i].split('\\')[-1].split('.')[0]}.txt"
+                )
+                with open(out_path, "w", encoding="utf-8") as f:
+                    f.write(pred_text)
+
+        batch["predictions"] = pred
+        batch["raw prediction"] = raw_pred
 
         return batch
 

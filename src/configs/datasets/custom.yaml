@@ -1,0 +1,5 @@
+test:
+  _target_: src.datasets.CustomDirAudioDataset
+  audio_dir: C:/Users/DARYA/Desktop/Stud/DLA/HW2/dla-asr/data/datasets/librispeech/dev-clean/84/121123
+  transcription_dir: C:/Users/DARYA/Desktop/Stud/DLA/HW2/dla-asr/data/saved/inf/test/84
+  instance_transforms: ${transforms.instance_transforms.inference}
