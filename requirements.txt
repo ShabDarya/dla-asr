@@ -9,11 +9,12 @@ matplotlib
 pandas
 wandb
 hydra-core
-
+huggingface_hub
 black
 isort
 pre-commit
 datasets
 wget
+gdown
 
 --extra-index-url https://download.pytorch.org/whl/cu118

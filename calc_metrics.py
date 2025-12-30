@@ -20,7 +20,7 @@ def main(cfg: DictConfig):
     trans_path = Path(cfg.trans_path)
     one_file_one_text = cfg.one_file_one_text
 
-    pred_files = [str(p) for p in preds_path.rglob("*.txt") if p.is_file()]
+    pred_files_all = [str(p) for p in preds_path.rglob("*.txt") if p.is_file()]
     trans_files = [str(p) for p in trans_path.rglob("*.txt") if p.is_file()]
 
     cer = []
@@ -29,25 +29,39 @@ def main(cfg: DictConfig):
     for trans in trans_files:
         if one_file_one_text:
             with open(trans, encoding="utf-8") as f:
-                trans_text = f.readline()
-                trans_name = trans.split("\\")[-1].split(".")[0]
+                trans_text = [f.readline().strip()]
+                trans_name = [Path(trans).stem]
 
         else:
             with open(trans, encoding="utf-8") as f:
+                names = []
+                texts = []
                 for line in f:
                     trans_name, trans_text = line.split(" ", 1)
+                    trans_name = Path(trans_name).stem
+                    texts.append(trans_text.strip())
+                    names.append(trans_name)
+                trans_text = texts
+                trans_name = names
+        trans_dict = dict(zip(trans_name, trans_text))
 
-        pred_file = next(
-            p
-            for p in pred_files
-            if p.endswith(f"/{trans_name}.txt") or p.endswith(f"\\{trans_name}.txt")
-        )
+        pred_files = [
+            (p, name)
+            for p in pred_files_all
+            for name in trans_name
+            if Path(p).stem == name
+        ]
 
-        with open(pred_file) as p_f:
-            pred_text = p_f.read()
+        if pred_files is None:
+            print(f"Нет файла с предсказаниями для - {trans_name}")
+            continue
 
-        cer.append(calc_cer(trans_text.lower(), pred_text.lower()))
-        wer.append(calc_wer(trans_text.lower(), pred_text.lower()))
+        for pred_file, tr_name in pred_files:
+            with open(pred_file) as p_f:
+                pred_text = p_f.read()
+
+            cer.append(calc_cer(trans_dict[tr_name].lower(), pred_text.lower()))
+            wer.append(calc_wer(trans_dict[tr_name].lower(), pred_text.lower()))
 
     res = {"cer": sum(cer) / len(cer), "wer": sum(wer) / len(wer)}
 

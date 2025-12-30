@@ -68,7 +68,7 @@ def main(config):
     for part in logs.keys():
         for key, value in logs[part].items():
             full_key = part + "_" + key
-            print(f"    {full_key: 15s}: {value}")
+            print(f"    {str(full_key).ljust(15)}: {value}")
 
 
 if __name__ == "__main__":

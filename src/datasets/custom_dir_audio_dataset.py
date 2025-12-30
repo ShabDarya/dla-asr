@@ -19,6 +19,8 @@ class CustomDirAudioDataset(BaseDataset):
                             entry["text"] = f.read().strip()
                     else:
                         entry["text"] = ""
+                else:
+                    entry["text"] = ""
 
                 waveform, sample_rate = torchaudio.load(path)
                 entry["audio_len"] = waveform.shape[1] / sample_rate
