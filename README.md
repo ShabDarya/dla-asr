@@ -10,7 +10,7 @@
 
 ## About
 
-This repository contains a template for solving ASR task with PyTorch. This template branch is a part of the [HSE DLA course](https://github.com/markovka17/dla) ASR homework. Some parts of the code are missing (or do not follow the most optimal design choices...) and students are required to fill these parts themselves (as well as writing their own models, etc.).
+This repository contains ASR model with PyTorch. This template branch is a part of the [HSE DLA course](https://github.com/markovka17/dla) ASR homework.
 
 See the task assignment [here](https://github.com/markovka17/dla/tree/2024/hw1_asr).
 
@@ -56,6 +56,25 @@ Follow these steps to install the project:
 
 ## How To Use
 
+To use a model, run the following code:
+```bash
+python3 download_model.py
+```
+
+or
+```python
+from huggingface_hub import hf_hub_download
+
+path = hf_hub_download(
+    repo_id="Nop659/dla_hw",
+    filename="model_best.pth",
+    local_dir="src/configs/best_model",
+)
+
+print("Saved to:", path)
+
+```
+
 To train a model, run the following command:
 
 ```bash
@@ -69,6 +88,14 @@ To run inference (evaluate the model or save predictions):
 ```bash
 python3 inference.py HYDRA_CONFIG_ARGUMENTS
 ```
+
+To run calc_metrics:
+
+```bash
+python3 calc_metrics.py HYDRA_CONFIG_ARGUMENTS
+```
+
+Also you can see examples in demo.ipynb.
 
 ## Credits
 
