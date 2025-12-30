@@ -1,0 +1,188 @@
+_wandb:
+    value:
+        cli_version: 0.22.2
+        e:
+            bxeya78vpk1g3lu560vof7swsim8v5t3:
+                args:
+                    - trainer.n_epochs=50
+                    - trainer.override=True
+                    - model=conformer
+                    - trainer.device=cuda
+                    - trainer.save_dir=/kaggle/working/saved
+                    - trainer.epoch_len=250
+                    - writer.project_name=dla_asr
+                    - writer.run_name=base
+                codePath: train.py
+                codePathLocal: train.py
+                cpu_count: 2
+                cpu_count_logical: 4
+                cudaVersion: "12.8"
+                disk:
+                    /:
+                        total: "8656922775552"
+                        used: "7075576913920"
+                email: gorodbs@gmail.com
+                executable: /usr/bin/python3
+                git:
+                    commit: ceaba23284b7727caf90714e4d4c45875b24d409
+                    remote: https://ShabDarya:@github.com/ShabDarya/dla-asr
+                gpu: Tesla T4
+                gpu_count: 2
+                gpu_nvidia:
+                    - architecture: Turing
+                      cudaCores: 2560
+                      memoryTotal: "16106127360"
+                      name: Tesla T4
+                      uuid: GPU-180c5fea-857a-80c2-c69a-1552a29e12e2
+                    - architecture: Turing
+                      cudaCores: 2560
+                      memoryTotal: "16106127360"
+                      name: Tesla T4
+                      uuid: GPU-3a9a51be-4116-351a-0cc1-cff0bd7fb20e
+                host: 0248513fb9af
+                memory:
+                    total: "33662472192"
+                os: Linux-6.6.105+-x86_64-with-glibc2.35
+                program: /kaggle/working/dla-asr/train.py
+                python: CPython 3.12.12
+                root: /kaggle/working/dla-asr
+                startedAt: "2025-12-22T08:01:21.425023Z"
+                writerId: bxeya78vpk1g3lu560vof7swsim8v5t3
+        m: []
+        python_version: 3.12.12
+        t:
+            "1":
+                - 1
+                - 11
+                - 41
+                - 49
+                - 50
+                - 51
+                - 105
+            "2":
+                - 1
+                - 11
+                - 41
+                - 49
+                - 50
+                - 51
+                - 105
+            "3":
+                - 13
+                - 14
+                - 16
+                - 61
+            "4": 3.12.12
+            "5": 0.22.2
+            "6": 4.57.1
+            "8":
+                - 2
+            "12": 0.22.2
+            "13": linux-x86_64
+dataloader:
+    value:
+        _target_: torch.utils.data.DataLoader
+        batch_size: 10
+        num_workers: 2
+        pin_memory: true
+datasets:
+    value:
+        test:
+            _target_: src.datasets.LibrispeechDataset
+            instance_transforms: ${transforms.instance_transforms.inference}
+            part: test-clean
+        train:
+            _target_: src.datasets.LibrispeechDataset
+            instance_transforms: ${transforms.instance_transforms.train}
+            part: train-clean-100
+        val:
+            _target_: src.datasets.LibrispeechDataset
+            instance_transforms: ${transforms.instance_transforms.inference}
+            part: dev-clean
+loss_function:
+    value:
+        _target_: src.loss.CTCLossWrapper
+lr_scheduler:
+    value:
+        _target_: torch.optim.lr_scheduler.OneCycleLR
+        anneal_strategy: cos
+        epochs: ${trainer.n_epochs}
+        max_lr: 0.01
+        pct_start: 0.1
+        steps_per_epoch: ${trainer.epoch_len}
+metrics:
+    value:
+        inference:
+            - _target_: src.metrics.ArgmaxCERMetric
+              name: CER_(Argmax)
+            - _target_: src.metrics.ArgmaxWERMetric
+              name: WER_(Argmax)
+        train: []
+model:
+    value:
+        _target_: src.model.ConformerModel
+        dim: 128
+        fc_hidden: 256
+        n_feats: 128
+        num_heads: 4
+        num_layers: 4
+optimizer:
+    value:
+        _target_: torch.optim.AdamW
+        lr: 0.0003
+text_encoder:
+    value:
+        _target_: src.text_encoder.CTCTextEncoder
+trainer:
+    value:
+        device: cuda
+        device_tensors:
+            - spectrogram
+            - text_encoded
+        early_stop: ${trainer.n_epochs}
+        epoch_len: 250
+        log_step: 50
+        monitor: min val_WER_(Argmax)
+        n_epochs: 50
+        override: true
+        resume_from: null
+        save_dir: /kaggle/working/saved
+        save_period: 5
+        seed: 1
+transforms:
+    value:
+        batch_transforms:
+            inference: null
+            train: null
+        instance_transforms:
+            inference:
+                get_spectrogram:
+                    _target_: torchaudio.transforms.MelSpectrogram
+                    hop_length: 160
+                    n_fft: 400
+                    n_mels: 128
+                    sample_rate: 16000
+                    win_length: 400
+            train:
+                audio:
+                    _target_: torchvision.transforms.v2.Compose
+                    transforms:
+                        - _target_: src.transforms.wav_augs.Gain
+                get_spectrogram:
+                    _target_: torchaudio.transforms.MelSpectrogram
+                    hop_length: 160
+                    n_fft: 400
+                    n_mels: 128
+                    sample_rate: 16000
+                    win_length: 400
+writer:
+    value:
+        _target_: src.logger.WandBWriter
+        entity: null
+        id_length: 8
+        log_checkpoints: false
+        loss_names:
+            - loss
+        mode: online
+        project_name: dla_asr
+        run_name: base

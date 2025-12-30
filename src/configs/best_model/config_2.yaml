@@ -1,0 +1,94 @@
+model:
+  _target_: src.model.ConformerModel
+  n_feats: 128
+  dim: 128
+  fc_hidden: 256
+  num_heads: 4
+  num_layers: 4
+writer:
+  _target_: src.logger.WandBWriter
+  project_name: dla_asr
+  entity: null
+  run_name: base_3
+  mode: online
+  loss_names:
+  - loss
+  log_checkpoints: false
+  id_length: 8
+  run_id: iwc4lqrs
+metrics:
+  train: []
+  inference:
+  - _target_: src.metrics.ArgmaxCERMetric
+    name: CER_(Argmax)
+  - _target_: src.metrics.ArgmaxWERMetric
+    name: WER_(Argmax)
+datasets:
+  train:
+    _target_: src.datasets.LibrispeechDataset
+    part: train-clean-100
+    instance_transforms: ${transforms.instance_transforms.train}
+  val:
+    _target_: src.datasets.LibrispeechDataset
+    part: dev-clean
+    instance_transforms: ${transforms.instance_transforms.inference}
+  test:
+    _target_: src.datasets.LibrispeechDataset
+    part: test-clean
+    instance_transforms: ${transforms.instance_transforms.inference}
+dataloader:
+  _target_: torch.utils.data.DataLoader
+  batch_size: 10
+  num_workers: 2
+  pin_memory: true
+transforms:
+  instance_transforms:
+    train:
+      get_spectrogram:
+        _target_: torchaudio.transforms.MelSpectrogram
+        sample_rate: 16000
+        n_fft: 400
+        hop_length: 160
+        win_length: 400
+        n_mels: 128
+    inference:
+      get_spectrogram:
+        _target_: torchaudio.transforms.MelSpectrogram
+        sample_rate: 16000
+        n_fft: 400
+        hop_length: 160
+        win_length: 400
+        n_mels: 128
+  batch_transforms:
+    train: null
+    inference: null
+optimizer:
+  _target_: torch.optim.AdamW
+  lr: 0.0003
+lr_scheduler:
+  _target_: torch.optim.lr_scheduler.OneCycleLR
+  max_lr: 0.001
+  pct_start: 0.1
+  steps_per_epoch: ${trainer.epoch_len}
+  epochs: ${trainer.n_epochs}
+  anneal_strategy: cos
+loss_function:
+  _target_: src.loss.CTCLossWrapper
+text_encoder:
+  _target_: src.text_encoder.CTCTextEncoder
+trainer:
+  log_step: 50
+  n_epochs: 50
+  epoch_len: 250
+  device_tensors:
+  - spectrogram
+  - text_encoded
+  resume_from: null
+  device: cuda
+  override: true
+  monitor: min val_WER_(Argmax)
+  save_period: 5
+  early_stop: ${trainer.n_epochs}
+  save_dir: /content/drive/MyDrive/test_asr3/saved
+  seed: 1
+  from_pretrained: model_best.pth
